@@ -3,7 +3,7 @@ package application
 import (
 	"context"
 	"encoding/json"
-	"golang_projects/iman-task/service1/repository"
+	"github.com/SherzodAbdullajonov/service1/repository"
 	"net/http"
 )
 

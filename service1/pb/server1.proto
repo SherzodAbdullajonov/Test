@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package data;
+option go_package="github.com/SherzodAbdullajonov/test/service1/pb";
+
+message DownloadPostsRequest {}
+
+message DownloadPostsResponse {}
+
+service DataService {
+    rpc DownloadPosts (DownloadPostsRequest) returns (DownloadPostsResponse);
+}

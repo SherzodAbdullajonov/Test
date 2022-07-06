@@ -1,6 +1,9 @@
 package repository
 
-import "context"
+import (
+	"context"
+	"fmt"
+)
 
 type Post struct {
 	Body   string `json:"body"`
@@ -9,26 +12,34 @@ type Post struct {
 	UserID int64  `json:"user_id"`
 }
 type Pagination struct {
-	Limit int64 `json:"limit"`
-	Links struct {
-	  Current  string      `json:"current"`
-	  Next     string      `json:"next"`
-	  Previous interface{} `json:"previous"`
-	} `json:"links"`
-	Page  int64 `json:"page"`
-	Pages int64 `json:"pages"`
-	Total int64 `json:"total"`
-  } 
+	url         string
+	limit       int64
+	currentPage int
+}
 
 type Repository interface {
 	CreatePosts(ctx context.Context)
 }
 
-func New (url string, limit int64) *Pagination{
+func New(url string, limit int64) *Pagination {
 	return &Pagination{
-		Limit:  limit,
-		Links: url,
-		
-
+		limit:       limit,
+		url:         url,
+		currentPage: 0,
 	}
+}
+func (u *Pagination) NextPage() (ok bool) {
+	if u.currentPage >= int(u.limit) {
+		return false
+	}
+
+	u.currentPage++
+	return true
+}
+func (u *Pagination) URL() string {
+	return fmt.Sprintf("%s?page=%d", u.url, u.currentPage)
+}
+
+func (u *Pagination) CurrentPage() int {
+	return u.currentPage
 }

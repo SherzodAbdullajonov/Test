@@ -2,17 +2,14 @@ package repository
 
 import (
 	"context"
-	"database/sql"
-	"errors"
 	"fmt"
-	
-	"golang_projects/iman-task/service1/repository"
+
+	"github.com/SherzodAbdullajonov/service1/repository"
 	"github.com/jmoiron/sqlx"
 )
 
 const (
-	postsTableName          = "posts"
-	
+	postsTableName = "posts"
 )
 
 type Entity struct {
@@ -62,14 +59,6 @@ func (r *PostgresRepository) CreatePosts(ctx context.Context, postsBatch <-chan 
 	return errChan
 }
 
-func (r *PostgresRepository) SetDownloadStatus(ctx context.Context, success bool, downloadErr error) error {
-	return setDownloadStatus(ctx, r.db, success, downloadErr)
-}
-
-func (r *PostgresRepository) GetDownloadStatus(ctx context.Context) (success bool, errMsg string, err error) {
-	return getDownloadStatus(ctx, r.db)
-}
-
 func (r *PostgresRepository) transact(txFunc func(*sqlx.Tx) error) error {
 	tx, err := r.db.Beginx()
 	if err != nil {
@@ -79,11 +68,11 @@ func (r *PostgresRepository) transact(txFunc func(*sqlx.Tx) error) error {
 	defer func() {
 		if p := recover(); p != nil {
 			tx.Rollback()
-			panic(p) 
+			panic(p)
 		} else if err != nil {
 			tx.Rollback()
 		} else {
-			err = tx.Commit() 
+			err = tx.Commit()
 		}
 	}()
 
@@ -108,39 +97,6 @@ func createPost(ctx context.Context, tx *sqlx.Tx, pm Entity) error {
 	_, err := tx.ExecContext(ctx, query, pm.ID, pm.UserID, pm.Title, pm.Body)
 
 	return err
-}
-
-func setDownloadStatus(ctx context.Context, db *sqlx.DB, success bool, downloadErr error) error {
-	query := fmt.Sprintf(
-		`INSERT INTO %s (success, error) VALUES ($1, $2)`,
-	)
-	var errWrapper sql.NullString
-	if downloadErr != nil {
-		errWrapper = sql.NullString{
-			String: downloadErr.Error(),
-			Valid:  true,
-		}
-	}
-
-	_, err := db.ExecContext(ctx, query, success, errWrapper)
-
-	return err
-}
-
-func getDownloadStatus(ctx context.Context, db *sqlx.DB) (success bool, errMsg string, err error) {
-	query := fmt.Sprintf(`SELECT success, error FROM %s ORDER BY created_at ASC LIMIT 1`)
-	var errWrapper sql.NullString
-
-	err = db.QueryRowxContext(ctx, query).Scan(&success, &errWrapper)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return false, "", err
-		}
-
-		return false, "", err
-	}
-
-	return success, errWrapper.String, nil
 }
 
 func toPostModel(p repository.Post) Entity {
